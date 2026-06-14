@@ -14,7 +14,7 @@ import Resources from './pages/Resources'
 
 // Student pages
 import StudentDashboard from './pages/student/StudentDashboard'
-import StudentCatalog from './pages/student/studentCatalog'
+import StudentCatalog from './pages/student/StudentCatalog'
 import StudentMyCourses from './pages/student/StudentMyCourses'
 import StudentQuizzes from './pages/student/StudentQuizzes'
 import StudentProgress from './pages/student/StudentProgress'
