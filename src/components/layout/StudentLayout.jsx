@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { Outlet, useNavigate } from 'react-router-dom'
 import { FiBell, FiSearch, FiSettings, FiGrid, FiLogOut } from 'react-icons/fi'
-import Sidebar from '../StudentDashboardComponents/Sidebar'
+import Sidebar from '../studentDashboardComponents/Sidebar'
+
 import DashboardFooter from './DashboardFooter'
 
 const StudentLayout = () => {
