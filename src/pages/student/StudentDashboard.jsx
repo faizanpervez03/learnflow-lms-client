@@ -1,9 +1,9 @@
 import React from "react"
-import ContinueLearning from "../../components/StudentDashboardComponents/ContinueLearning"
-import EnrolledCourses from "../../components/StudentDashboardComponents/EnrolledCourses"
-import DayStreak from "../../components/StudentDashboardComponents/DayStreak"
-import UpcomingQuiz from "../../components/StudentDashboardComponents/UpcomingQuiz"
-import ConnectMentors from "../../components/StudentDashboardComponents/ConnectMentors"
+import ContinueLearning from "../../components/studentDashboardComponents/ContinueLearning"
+import EnrolledCourses from "../../components/studentDashboardComponents/EnrolledCourses"
+import DayStreak from "../../components/studentDashboardComponents/DayStreak"
+import UpcomingQuiz from "../../components/studentDashboardComponents/UpcomingQuiz"
+import ConnectMentors from "../../components/studentDashboardComponents/ConnectMentors"
 
 
 const StudentDashboard = () => {
