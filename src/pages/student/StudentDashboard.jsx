@@ -37,7 +37,7 @@ const StudentDashboard = () => {
         </div>
 
       </div>
-      
+
     </div>
   )
 }

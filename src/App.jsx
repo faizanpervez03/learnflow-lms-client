@@ -20,6 +20,9 @@ import StudentQuizzes from './pages/student/StudentQuizzes'
 import StudentProgress from './pages/student/StudentProgress'
 import StudentCertificates from './pages/student/StudentCertificates'
 import StudentSetting from './pages/student/StudentSetting'
+import StudentVideoLesson from './pages/student/StudentVideoLesson'
+import CourseDetail from './pages/CourseDetail'
+// import VideoLesson from './pages/VideoLesson'
 
 const App = () => {
   return (
@@ -32,6 +35,9 @@ const App = () => {
         <Route path='/mylearning' element={<Mylearning />} />
         <Route path='/mentors'    element={<Mentors />}    />
         <Route path='/resources'  element={<Resources />}  />
+        <Route path='/coursedetail' element={<CourseDetail />} />
+        <Route path='/coursedetail/:id' element={<CourseDetail />} />
+        {/* <Route path='/lesson/:id'  element={<VideoLesson />}  /> */}
       </Route>
 
       {/* Student dashboard — Sidebar + Topbar only */}
@@ -45,6 +51,7 @@ const App = () => {
           <Route path='progress' element={<StudentProgress />} />
           <Route path='certificates' element={<StudentCertificates />} />
           <Route path='settings' element={<StudentSetting />} />
+          <Route path='lesson/:id' element={<StudentVideoLesson />} />
           
         </Route>
 
