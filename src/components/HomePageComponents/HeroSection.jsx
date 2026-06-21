@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react"
+import { useNavigate } from "react-router-dom"
 
 const courses = [
     { name: "Character Creation", done: true },
@@ -19,6 +20,8 @@ const HeroSection = () => {
         const interval = setInterval(() => setFloat(f => !f), 1800)
         return () => clearInterval(interval)
     }, [])
+
+    const navigate = useNavigate()
 
     return (
         <section className="min-h-screen bg-[#f3f3f8] flex items-center overflow-hidden px-6 md:px-16 py-16">
@@ -45,7 +48,9 @@ const HeroSection = () => {
                         <button className="bg-[#3525d7] hover:bg-[#2a1fb0] transition-all text-white font-semibold px-7 py-3 rounded-lg text-sm shadow-lg shadow-indigo-300 pointer cursor-pointer">
                             Get Started Free
                         </button>
-                        <button className="text-gray-700 font-semibold text-sm flex items-center gap-1 hover:text-[#3525d7] transition cursor-pointer">
+                        <button className="text-gray-700 font-semibold text-sm flex items-center gap-1 hover:text-[#3525d7] transition cursor-pointer" 
+                        onClick={() => navigate("/catalog")}
+                        >
                             See Courses <span className="text-lg">→</span>
                         </button>
                     </div>

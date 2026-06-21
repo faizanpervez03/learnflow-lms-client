@@ -4,16 +4,27 @@ import EnrolledCourses from "../../components/studentDashboardComponents/Enrolle
 import DayStreak from "../../components/studentDashboardComponents/DayStreak"
 import UpcomingQuiz from "../../components/studentDashboardComponents/UpcomingQuiz"
 import ConnectMentors from "../../components/studentDashboardComponents/ConnectMentors"
-
+import { useAuth } from "../../context/AuthContext"
 
 const StudentDashboard = () => {
+  const { user } = useAuth()
+
+  const firstName = user?.name?.split(" ")[0] || "Student"
+
+  const getGreeting = () => {
+    const hour = new Date().getHours()
+    if (hour < 12) return "Good morning"
+    if (hour < 17) return "Good afternoon"
+    return "Good evening"
+  }
+
   return (
     <div className="flex flex-col gap-6">
 
       {/* Greeting */}
       <div>
         <h1 className="text-2xl font-extrabold text-gray-900">
-          Good morning, Faizan 👋
+          {getGreeting()}, {firstName} 👋
         </h1>
         <p className="text-sm text-gray-400 mt-1">
           You've completed 12% of your weekly goal. Keep it up!

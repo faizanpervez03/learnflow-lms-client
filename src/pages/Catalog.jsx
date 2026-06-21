@@ -1,8 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FiSearch, FiStar, FiUser } from "react-icons/fi"
 import { useNavigate } from "react-router-dom"
-import { fallbackCourses } from "../data/courseFallback"
-import { getCourses } from "../services/courseService"
+import { getCourses } from "../services/course.service"
 
 const categories = ["All Categories", "Design", "Development", "Business", "Marketing", "Photography", "Music", "Data Science"]
 const sortOptions = ["Newest", "Most Popular", "Highest Rated", "Price: Low to High", "Price: High to Low"]
@@ -47,17 +46,12 @@ const Catalog = () => {
         })
 
         if (!ignore) {
-          if (response.meta?.databaseConnected === false) {
-            setError("Backend is running, but MongoDB is not connected yet. Showing demo courses.")
-            setCourses(fallbackCourses)
-          } else {
-            setCourses(response.data || [])
-          }
+            setCourses(Array.isArray(response.data) ? response.data : [])
         }
-      } catch (err) {
+      } catch {
         if (!ignore) {
-          setError("Backend is not connected yet, showing demo courses.")
-          setCourses(fallbackCourses)
+          setError("Unable to load courses from the server.")
+          setCourses([])
         }
       } finally {
         if (!ignore) setIsLoading(false)
@@ -169,7 +163,7 @@ const Catalog = () => {
                       {course.price > 0 ? `$${course.price}` : "Free"}
                     </span>
                     <button
-                      onClick={() => navigate(`/coursedetail/${course._id || course.id}`)}
+                      onClick={() => navigate(`/coursedetail/${course._id || course.id}`, { state: { course } })}
                       className="cursor-pointer text-xs font-semibold bg-indigo-50 text-[#3525d7] px-3 py-1.5 rounded-xl hover:bg-[#3525d7] hover:text-white transition-all duration-200"
                     >
                       View

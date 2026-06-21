@@ -9,7 +9,10 @@ const Navbar = () => {
   const dropdownRef = useRef(null)
   const navigate = useNavigate()
 
-  // Close dropdown when clicking outside
+  // TEMP — replace with: const { user, logout } = useAuth()
+  const isLoggedIn = false
+  const user = { name: "Faizan Pervez", initials: "FP" }
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (dropdownRef.current && !dropdownRef.current.contains(e.target)) {
@@ -26,6 +29,12 @@ const Navbar = () => {
         ? "text-[#3525d7] border-b-2 border-[#3525d7]"
         : "text-gray-600 hover:text-[#3525d7]"
     }`
+
+  const handleLogout = () => {
+    // TODO: call real logout() from AuthContext here
+    setDropdownOpen(false)
+    navigate("/")
+  }
 
   return (
     <div className="border-b border-gray-200 bg-white relative z-50">
@@ -46,74 +55,89 @@ const Navbar = () => {
           </nav>
         </div>
 
-        {/* RIGHT — Icons + Button */}
+        {/* RIGHT — Auth-aware section */}
         <div className="hidden md:flex items-center gap-4">
-          <FiBell className="text-xl text-gray-600 hover:text-black cursor-pointer" />
 
-          {/* User icon with dropdown */}
-          <div className="relative" ref={dropdownRef}>
-            <button
-              onClick={() => setDropdownOpen(d => !d)}
-              className={`text-xl transition cursor-pointer p-1 rounded-full
-                ${dropdownOpen ? "text-[#3525d7] bg-indigo-50" : "text-gray-600 hover:text-black"}`}
-            >
-              <FiUser />
-            </button>
+          {isLoggedIn ? (
+            <>
+              <FiBell className="text-xl text-gray-600 hover:text-black cursor-pointer" />
 
-            {/* Dropdown */}
-            {dropdownOpen && (
-              <div className="absolute right-0 top-10 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+              <div className="relative" ref={dropdownRef}>
+                <button
+                  onClick={() => setDropdownOpen(d => !d)}
+                  className={`text-xl transition cursor-pointer p-1 rounded-full
+                    ${dropdownOpen ? "text-[#3525d7] bg-indigo-50" : "text-gray-600 hover:text-black"}`}
+                >
+                  <FiUser />
+                </button>
 
-                {/* User info */}
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
-                      <span className="text-sm font-bold text-[#3525d7]">FP</span>
+                {dropdownOpen && (
+                  <div className="absolute right-0 top-10 w-56 bg-white border border-gray-100 rounded-2xl shadow-xl py-2 z-50">
+
+                    <div className="px-4 py-3 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center">
+                          <span className="text-sm font-bold text-[#3525d7]">{user.initials}</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                          <p className="text-xs text-gray-400">Student Account</p>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-bold text-gray-900">Faizan Pervez</p>
-                      <p className="text-xs text-gray-400">Student Account</p>
+
+                    <div className="py-1">
+                      <button
+                        onClick={() => { navigate("/studentdashboard"); setDropdownOpen(false) }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-[#3525d7] transition"
+                      >
+                        <FiGrid className="text-base" />
+                        Dashboard
+                      </button>
+
+                      <button
+                        onClick={() => { navigate("/studentdashboard/settings"); setDropdownOpen(false) }}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-[#3525d7] transition"
+                      >
+                        <FiSettings className="text-base" />
+                        Settings
+                      </button>
                     </div>
+
+                    <div className="border-t border-gray-100 pt-1">
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition"
+                      >
+                        <FiLogOut className="text-base" />
+                        Logout
+                      </button>
+                    </div>
+
                   </div>
-                </div>
-
-                {/* Links */}
-                <div className="py-1">
-                  <button
-                    onClick={() => { navigate("/studentdashboard"); setDropdownOpen(false) }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-[#3525d7] transition"
-                  >
-                    <FiGrid className="text-base" />
-                    Dashboard
-                  </button>
-
-                  <button
-                    onClick={() => { navigate("/student/settings"); setDropdownOpen(false) }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-[#3525d7] transition"
-                  >
-                    <FiSettings className="text-base" />
-                    Settings
-                  </button>
-                </div>
-
-                {/* Logout */}
-                <div className="border-t border-gray-100 pt-1">
-                  <button
-                    onClick={() => { navigate("/"); setDropdownOpen(false) }}
-                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-red-500 hover:bg-red-50 transition"
-                  >
-                    <FiLogOut className="text-base" />
-                    Logout
-                  </button>
-                </div>
-
+                )}
               </div>
-            )}
-          </div>
 
-          <button className="bg-[#3525d7] text-white px-4 py-2 rounded-md text-sm hover:bg-[#2a1fb0] transition">
-            Upgrade Pro
-          </button>
+              <button className="bg-[#3525d7] text-white px-4 py-2 rounded-md text-sm hover:bg-[#2a1fb0] transition cursor-pointer">
+                Upgrade Pro
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="text-sm font-medium text-gray-600 hover:text-[#3525d7] transition"
+              >
+                Login
+              </Link>
+              <Link to="/register">
+                <button className="bg-[#3525d7] text-white px-4 py-2 rounded-md text-sm hover:bg-[#2a1fb0] transition cursor-pointer">
+                  Register
+                </button>
+              </Link>
+            </>
+          )}
+
         </div>
 
         {/* Mobile Menu Button */}
@@ -130,36 +154,56 @@ const Navbar = () => {
       {open && (
         <div className="md:hidden px-4 pb-4 space-y-3">
 
-          {/* Icons + Button on top */}
           <div className="flex items-center justify-between py-3 border-b mb-3">
-            <div className="flex items-center gap-4">
-              <FiBell className="text-xl text-gray-600" />
-              <button
-                onClick={() => { navigate("/studentdashboard"); setOpen(false) }}
-                className="text-xl text-gray-600 hover:text-[#3525d7]"
-              >
-                <FiUser />
-              </button>
-            </div>
-            <button className="bg-[#3525d7] text-white px-4 py-2 rounded-md text-sm">
-              Upgrade Pro
-            </button>
+            {isLoggedIn ? (
+              <>
+                <div className="flex items-center gap-4">
+                  <FiBell className="text-xl text-gray-600" />
+                  <button
+                    onClick={() => { navigate("/studentdashboard"); setOpen(false) }}
+                    className="text-xl text-gray-600 hover:text-[#3525d7]"
+                  >
+                    <FiUser />
+                  </button>
+                </div>
+                <button className="bg-[#3525d7] text-white px-4 py-2 rounded-md text-sm">
+                  Upgrade Pro
+                </button>
+              </>
+            ) : (
+              <div className="flex items-center gap-3 w-full">
+                <Link
+                  to="/login"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 text-center text-sm font-medium text-gray-700 border border-gray-200 rounded-md py-2"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  onClick={() => setOpen(false)}
+                  className="flex-1 text-center text-sm font-medium text-white bg-[#3525d7] rounded-md py-2"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
 
-          {/* Nav Links */}
           <div className="flex flex-col space-y-3">
             <NavLink to="/catalog"    className={linkClass} onClick={() => setOpen(false)}>Catalog</NavLink>
             <NavLink to="/mylearning" className={linkClass} onClick={() => setOpen(false)}>My Learning</NavLink>
             <NavLink to="/mentors"    className={linkClass} onClick={() => setOpen(false)}>Mentors</NavLink>
             <NavLink to="/resources"  className={linkClass} onClick={() => setOpen(false)}>Resources</NavLink>
 
-            {/* Mobile dashboard link */}
-            <button
-              onClick={() => { navigate("/student/dashboard"); setOpen(false) }}
-              className="text-left text-sm font-medium text-[#3525d7]"
-            >
-              → Go to Dashboard
-            </button>
+            {isLoggedIn && (
+              <button
+                onClick={() => { navigate("/studentdashboard"); setOpen(false) }}
+                className="text-left text-sm font-medium text-[#3525d7]"
+              >
+                → Go to Dashboard
+              </button>
+            )}
           </div>
 
         </div>

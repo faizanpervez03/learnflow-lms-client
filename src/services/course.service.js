@@ -25,3 +25,11 @@ export const getCourses = async ({ category, search, sortBy, page = 1 }) => {
 
   return apiRequest(`/courses?${params.toString()}`)
 }
+
+export const getCourseById = async (courseId) => {
+  return apiRequest(`/courses/${courseId}`)
+}
+
+export const getCourseLessons = async (courseId) => {
+  return apiRequest(`/lessons/course/${courseId}`)
+}

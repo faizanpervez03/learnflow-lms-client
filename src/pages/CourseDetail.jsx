@@ -1,171 +1,296 @@
-import React, { useState } from "react"
-import { useNavigate, useParams } from "react-router-dom"
+import { useEffect, useMemo, useState } from "react"
+import { useLocation, useNavigate, useParams } from "react-router-dom"
 import {
-  RiStarFill,
-  RiStarHalfFill,
-  RiGroupLine,
-  RiTimeLine,
-  RiDownloadLine,
-  RiInfinityLine,
-  RiAwardLine,
-  RiPlayCircleLine,
-  RiCheckboxCircleLine,
   RiArrowDownSLine,
   RiArrowRightSLine,
-  RiShareLine,
-  RiGiftLine,
-  RiThumbUpLine,
-  RiFlag2Line,
-  RiLockLine,
-  RiVideoLine,
+  RiAwardLine,
+  RiCheckboxCircleLine,
+  RiDownloadLine,
   RiFileListLine,
+  RiFlag2Line,
+  RiGiftLine,
+  RiInfinityLine,
+  RiLockLine,
+  RiPlayCircleLine,
+  RiShareLine,
+  RiStarFill,
+  RiThumbUpLine,
+  RiTimeLine,
+  RiVideoLine,
 } from "react-icons/ri"
+import { ApiClientError } from "../services/api"
+import { getCourseById, getCourseLessons } from "../services/course.service"
 
-const courseData = {
-  title: "Mastering Web Performance",
-  subtitle: "Optimize your web applications for speed, core web vitals, and user experience with industry-standard patterns and modern auditing tools.",
-  instructor: "Sarah Chen",
-  instructorAvatar: "https://randomuser.me/api/portraits/women/44.jpg",
-  rating: 4.9,
-  totalRatings: "19,442",
-  totalStudents: "19,442",
-  lastUpdated: "10/2023",
-  price: 89,
-  originalPrice: 149,
-  discount: "40% OFF",
-  image: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format",
-  includes: [
-    { icon: RiVideoLine,      label: "12 hours on-demand video"    },
-    { icon: RiDownloadLine,   label: "45 downloadable resources"   },
-    { icon: RiInfinityLine,   label: "Full lifetime access"        },
-    { icon: RiAwardLine,      label: "Certificate of completion"   },
-  ],
-  curriculum: [
-    {
-      id: 1,
-      section: "Section 1: Performance Fundamentals",
-      lectures: 4,
-      duration: "24m",
-      open: true,
-      lessons: [
-        { id: 1, title: "Welcome & Course Overview",    duration: "05:12", type: "video",   free: true  },
-        { id: 2, title: "Measuring Performance Metrics", duration: "12:45", type: "video",  free: false },
-        { id: 3, title: "Knowledge Check: Basics",       duration: "5 questions", type: "quiz", free: false },
-      ],
-    },
-    {
-      id: 2,
-      section: "Section 2: The Critical Rendering Path",
-      lectures: 6,
-      duration: "52m",
-      open: false,
-      lessons: [
-        { id: 4, title: "How Browsers Render Pages",    duration: "08:30", type: "video",   free: false },
-        { id: 5, title: "DOM & CSSOM Construction",     duration: "10:15", type: "video",   free: false },
-        { id: 6, title: "Render Blocking Resources",    duration: "12:00", type: "video",   free: false },
-      ],
-    },
-    {
-      id: 3,
-      section: "Section 3: Optimizing Assets & Media",
-      lectures: 8,
-      duration: "1h 15m",
-      open: false,
-      lessons: [
-        { id: 7, title: "Image Optimization Strategies", duration: "14:20", type: "video",  free: false },
-        { id: 8, title: "Modern Image Formats",          duration: "10:55", type: "video",  free: false },
-      ],
-    },
-  ],
-  tabs: ["Overview", "Curriculum", "Instructor", "Reviews"],
-  reviews: [
-    {
-      name: "Michael T.",
+const genericCourseImage = "https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800&auto=format"
+
+const formatCount = (value = 0) => {
+  const safeValue = Number(value) || 0
+  if (safeValue >= 1000) return `${(safeValue / 1000).toFixed(1)}k`
+  return String(safeValue)
+}
+
+const formatDuration = (seconds = 0) => {
+  const safeSeconds = Math.max(0, Number(seconds) || 0)
+  if (!safeSeconds) return "0m"
+
+  const hours = Math.floor(safeSeconds / 3600)
+  const minutes = Math.floor((safeSeconds % 3600) / 60)
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`
+  }
+
+  return `${minutes}m`
+}
+
+const getInstructor = (course) => {
+  if (typeof course?.instructor === "string") {
+    return {
+      name: course.instructor,
       avatar: "https://randomuser.me/api/portraits/men/45.jpg",
-      date: "2 weeks ago",
-      rating: 5,
-      text: "This course transformed how I build React apps. Sarah's explanation of Core Web Vitals and how to optimize them using DevTools is the best I've seen. Truly high authority content.",
-      helpful: 12,
-    },
-    {
-      name: "Priya S.",
-      avatar: "https://randomuser.me/api/portraits/women/55.jpg",
-      date: "1 month ago",
-      rating: 5,
-      text: "Absolutely brilliant course. Went from knowing nothing about web performance to confidently auditing production apps. The exercises are incredibly well designed.",
-      helpful: 8,
-    },
-  ],
-  ratingBreakdown: [
-    { stars: 5, pct: 85 },
-    { stars: 4, pct: 10 },
-    { stars: 3, pct: 4  },
-  ],
+      bio: "LearnFlow Instructor",
+    }
+  }
+
+  return {
+    name: course?.instructor?.name || "LearnFlow Instructor",
+    avatar: course?.instructor?.avatar || "https://randomuser.me/api/portraits/men/45.jpg",
+    bio: course?.instructor?.bio || "LearnFlow Instructor",
+  }
+}
+
+const groupLessonsBySection = (lessons = []) => {
+  const sections = new Map()
+
+  lessons.forEach((lesson, index) => {
+    const sectionTitle = lesson.sectionTitle?.trim() || "Course content"
+
+    if (!sections.has(sectionTitle)) {
+      sections.set(sectionTitle, [])
+    }
+
+    sections.get(sectionTitle).push({
+      id: lesson._id || `${sectionTitle}-${index}`,
+      lessonId: lesson._id,
+      title: lesson.title,
+      duration: lesson.video?.durationSeconds ? formatDuration(lesson.video.durationSeconds) : lesson.isPreview ? "Preview" : "Locked",
+      type: lesson.video ? "video" : "lesson",
+      free: Boolean(lesson.isPreview),
+    })
+  })
+
+  return Array.from(sections.entries()).map(([section, sectionLessons], index) => ({
+    id: section,
+    section,
+    lectures: sectionLessons.length,
+    duration: sectionLessons.reduce((total, lesson) => total + (lesson.duration === "Preview" || lesson.duration === "Locked" ? 0 : 1), 0),
+    open: index === 0,
+    lessons: sectionLessons,
+  }))
 }
 
 const CourseDetail = () => {
-  const navigate                        = useNavigate()
-  const { id }                          = useParams()
-  const [activeTab, setActiveTab]       = useState("Curriculum")
-  const [openSections, setOpenSections] = useState({ 1: true })
+  const navigate = useNavigate()
+  const location = useLocation()
+  const { id } = useParams()
+
+  const initialCourse = location.state?.course || null
+  const [course, setCourse] = useState(initialCourse)
+  const [lessons, setLessons] = useState([])
+  const [activeTab, setActiveTab] = useState("Curriculum")
+  const [openSections, setOpenSections] = useState({})
+  const [isLoading, setIsLoading] = useState(Boolean(id && !initialCourse))
+  const [error, setError] = useState("")
+
+  useEffect(() => {
+    let ignore = false
+
+    const loadCourse = async () => {
+      const courseId = id || initialCourse?._id || initialCourse?.id
+
+      if (!courseId) {
+        setCourse(null)
+        setLessons([])
+        setError("Course not available.")
+        setIsLoading(false)
+        return
+      }
+
+      setIsLoading(true)
+      setError("")
+
+      try {
+        const [courseResponse, lessonsResponse] = await Promise.allSettled([
+          getCourseById(courseId),
+          getCourseLessons(courseId),
+        ])
+
+        if (ignore) return
+
+        if (courseResponse.status === "fulfilled") {
+          setCourse(courseResponse.value.data || null)
+        } else if (initialCourse) {
+          setCourse(initialCourse)
+        } else {
+          throw courseResponse.reason
+        }
+
+        if (lessonsResponse.status === "fulfilled") {
+          setLessons(Array.isArray(lessonsResponse.value.data) ? lessonsResponse.value.data : [])
+        } else {
+          setLessons([])
+        }
+      } catch (requestError) {
+        if (ignore) return
+
+        const statusCode = requestError instanceof ApiClientError ? requestError.statusCode : 0
+
+        if (statusCode === 404) {
+          setError("Course not found.")
+        } else if (statusCode === 503) {
+          setError("Backend is running without a database connection.")
+        } else {
+          setError("Unable to load the selected course.")
+        }
+
+        setCourse(initialCourse || null)
+        setLessons([])
+      } finally {
+        if (!ignore) setIsLoading(false)
+      }
+    }
+
+    loadCourse()
+
+    return () => {
+      ignore = true
+    }
+  }, [id, initialCourse])
+
+  const activeCourse = course || initialCourse
+  const instructor = getInstructor(activeCourse)
+  const curriculum = useMemo(() => {
+    const structuredLessons = groupLessonsBySection(lessons)
+
+    if (structuredLessons.length > 0) return structuredLessons
+
+    return [
+      {
+        id: "overview",
+        section: "Course content",
+        lectures: 1,
+        duration: 0,
+        open: true,
+        lessons: [
+          {
+            id: activeCourse?._id || activeCourse?.id || "preview",
+            lessonId: activeCourse?._id || activeCourse?.id || "preview",
+            title: activeCourse?.title || "Course preview",
+            duration: "Preview",
+            type: "video",
+            free: true,
+          },
+        ],
+      },
+    ]
+  }, [activeCourse, lessons])
 
   const toggleSection = (sectionId) => {
-    setOpenSections(prev => ({ ...prev, [sectionId]: !prev[sectionId] }))
+    setOpenSections((current) => ({ ...current, [sectionId]: !current[sectionId] }))
   }
 
-  const goToLesson = () => navigate(`/lesson/${id || 1}`)
+  const goToLesson = (lessonId) => {
+    const targetLessonId = lessonId || lessons.find((lesson) => lesson.isPreview)?._id || lessons[0]?._id || activeCourse._id || activeCourse.id || 1
+    navigate(`/studentdashboard/lesson/${targetLessonId}`)
+  }
+
+  const courseImage = activeCourse?.thumbnail?.url || activeCourse?.image || genericCourseImage
+  const rating = Number(activeCourse?.averageRating ?? activeCourse?.rating ?? 0)
+  const reviewsCount = activeCourse?.reviewsCount ?? activeCourse?.totalRatings ?? 0
+  const studentsCount = activeCourse?.studentsCount ?? activeCourse?.totalStudents ?? 0
+  const lastUpdated = activeCourse?.updatedAt || activeCourse?.publishedAt || activeCourse?.lastUpdated || ""
+  const description = activeCourse?.description || activeCourse?.subtitle || ""
+  const outcomes = Array.isArray(activeCourse?.outcomes) ? activeCourse.outcomes : []
+  const requirements = Array.isArray(activeCourse?.requirements) ? activeCourse.requirements : []
+  const previewLesson = lessons.find((lesson) => lesson.isPreview) || lessons[0]
+  const totalVideoSeconds = lessons.reduce((total, lesson) => total + (lesson.video?.durationSeconds || 0), 0)
+  const resourceCount = lessons.reduce((total, lesson) => total + (lesson.resources?.length || 0), 0)
+  const includes = [
+    { icon: RiVideoLine, label: `${formatDuration(totalVideoSeconds || 12 * 3600)} on-demand video` },
+    { icon: RiDownloadLine, label: `${resourceCount || 1} downloadable resource${(resourceCount || 1) === 1 ? "" : "s"}` },
+    { icon: RiInfinityLine, label: "Full lifetime access" },
+    { icon: RiAwardLine, label: "Certificate of completion" },
+  ]
+
+  const reviews = Array.isArray(activeCourse?.reviews) ? activeCourse.reviews : []
+
+  if (!isLoading && !activeCourse) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-lg font-semibold text-gray-900">{error || "Course not available."}</p>
+        <button
+          onClick={() => navigate("/catalog")}
+          className="rounded-xl bg-[#3525d7] px-4 py-2 text-sm font-semibold text-white"
+        >
+          Back to catalog
+        </button>
+      </div>
+    )
+  }
+
+  if (isLoading && !course) {
+    return <div className="min-h-screen flex items-center justify-center text-sm text-gray-400">Loading course details...</div>
+  }
 
   return (
     <div className="min-h-screen bg-white">
+      {error && (
+        <div className="border-b border-yellow-100 bg-yellow-50 px-6 py-3 text-xs font-semibold text-yellow-700 md:px-16">
+          {error}
+        </div>
+      )}
 
-      {/* ── Breadcrumb ── */}
-      <div className="border-b border-gray-100 px-6 md:px-16 py-3 bg-gray-50">
+      <div className="border-b border-gray-100 px-6 py-3 bg-gray-50 md:px-16">
         <div className="max-w-7xl mx-auto flex items-center gap-2 text-xs text-gray-400">
           <span className="cursor-pointer hover:text-[#3525d7] transition" onClick={() => navigate("/catalog")}>Catalog</span>
           <RiArrowRightSLine size={14} />
-          <span className="cursor-pointer hover:text-[#3525d7] transition" onClick={() => navigate("/catalog")}>Development</span>
+          <span className="cursor-pointer hover:text-[#3525d7] transition" onClick={() => navigate("/catalog")}>{activeCourse?.category || "Development"}</span>
           <RiArrowRightSLine size={14} />
-          <span className="text-gray-600 font-semibold">Web Performance</span>
+          <span className="text-gray-600 font-semibold">{activeCourse?.title || "Course details"}</span>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 md:px-16 py-8">
         <div className="flex flex-col lg:flex-row gap-10">
-
-          {/* ── LEFT column ── */}
           <div className="flex-1 min-w-0 flex flex-col gap-8">
-
-            {/* Course header */}
             <div className="flex flex-col gap-4">
               <h1 className="text-3xl font-extrabold text-gray-900 leading-tight">
-                {courseData.title}
+                {activeCourse?.title || "Course details"}
               </h1>
-              <p className="text-gray-500 text-base leading-relaxed">{courseData.subtitle}</p>
+              <p className="text-gray-500 text-base leading-relaxed">{description}</p>
 
-              {/* Instructor + meta */}
               <div className="flex items-center gap-3 flex-wrap">
-                <img src={courseData.instructorAvatar} alt={courseData.instructor}
+                <img src={instructor.avatar} alt={instructor.name}
                   className="w-8 h-8 rounded-full object-cover" />
-                <span className="text-sm text-gray-500">By <span className="font-semibold text-gray-800">{courseData.instructor}</span></span>
+                <span className="text-sm text-gray-500">By <span className="font-semibold text-gray-800">{instructor.name}</span></span>
                 <span className="text-gray-300">·</span>
                 <div className="flex items-center gap-1">
-                  {[1,2,3,4,5].map(i => (
+                  {[1,2,3,4,5].map((i) => (
                     <RiStarFill key={i} size={13} className="text-yellow-400" />
                   ))}
-                  <span className="text-sm font-bold text-gray-800 ml-1">{courseData.rating}</span>
-                  <span className="text-sm text-gray-400 ml-1">({courseData.totalRatings} students)</span>
+                  <span className="text-sm font-bold text-gray-800 ml-1">{rating || "0.0"}</span>
+                  <span className="text-sm text-gray-400 ml-1">({formatCount(reviewsCount)} ratings)</span>
                 </div>
                 <span className="text-gray-300">·</span>
                 <span className="flex items-center gap-1 text-xs text-gray-400">
-                  <RiTimeLine size={13} /> Last updated {courseData.lastUpdated}
+                  <RiTimeLine size={13} /> Last updated {lastUpdated ? String(lastUpdated).slice(0, 7) : "N/A"}
                 </span>
               </div>
             </div>
 
-            {/* Tabs */}
             <div className="border-b border-gray-100">
               <div className="flex items-center gap-6">
-                {courseData.tabs.map(tab => (
+                {["Overview", "Curriculum", "Instructor", "Reviews"].map((tab) => (
                   <button key={tab} onClick={() => setActiveTab(tab)}
                     className={`cursor-pointer pb-3 text-sm font-semibold border-b-2 transition-all duration-200
                       ${activeTab === tab
@@ -177,43 +302,50 @@ const CourseDetail = () => {
               </div>
             </div>
 
-            {/* ── Overview tab ── */}
             {activeTab === "Overview" && (
               <div className="flex flex-col gap-5">
-                <h2 className="text-lg font-bold text-gray-900">What you'll learn</h2>
+                <h2 className="text-lg font-bold text-gray-900">What you&apos;ll learn</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[
-                    "Audit and fix Core Web Vitals (LCP, FID, CLS)",
-                    "Optimize images, fonts, and third-party scripts",
-                    "Use Chrome DevTools and Lighthouse effectively",
-                    "Implement lazy loading and code splitting",
-                    "Measure real-user performance with analytics",
-                    "Deploy performance budgets in CI/CD pipelines",
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-start gap-2 text-sm text-gray-600">
+                  {outcomes.map((item, index) => (
+                    <div key={`${item}-${index}`} className="flex items-start gap-2 text-sm text-gray-600">
                       <RiCheckboxCircleLine size={16} className="text-[#3525d7] mt-0.5 shrink-0" />
                       {item}
                     </div>
                   ))}
+                  {outcomes.length === 0 && <p className="text-sm text-gray-400">No learning outcomes have been added yet.</p>}
                 </div>
+
+                {requirements.length > 0 && (
+                  <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
+                    <h3 className="text-sm font-bold text-gray-900">Requirements</h3>
+                    <ul className="mt-3 space-y-2 text-sm text-gray-600">
+                      {requirements.map((requirement, index) => (
+                        <li key={`${requirement}-${index}`} className="flex items-start gap-2">
+                          <span className="mt-1 h-1.5 w-1.5 rounded-full bg-[#3525d7]" />
+                          <span>{requirement}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* ── Curriculum tab ── */}
             {activeTab === "Curriculum" && (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
                   <h2 className="text-lg font-bold text-gray-900">Course Content</h2>
                   <span className="text-xs text-gray-400">
-                    12 sections · 145 lectures · 12h 45m total length
+                    {curriculum.length} section{curriculum.length === 1 ? "" : "s"} · {lessons.length || curriculum.reduce((total, section) => total + section.lectures, 0)} lecture{(lessons.length || curriculum.reduce((total, section) => total + section.lectures, 0)) === 1 ? "" : "s"} · {formatDuration(totalVideoSeconds)} total length
                   </span>
                 </div>
 
                 <div className="border border-gray-100 rounded-2xl overflow-hidden">
-                  {courseData.curriculum.map(section => (
-                    <div key={section.id} className="border-b border-gray-100 last:border-0">
+                  {curriculum.map((section, index) => {
+                    const isSectionOpen = openSections[section.id] ?? index === 0
 
-                      {/* Section header */}
+                    return (
+                    <div key={section.id} className="border-b border-gray-100 last:border-0">
                       <button
                         onClick={() => toggleSection(section.id)}
                         className="cursor-pointer w-full flex items-center justify-between px-5 py-4 bg-gray-50 hover:bg-indigo-50 transition text-left"
@@ -221,26 +353,24 @@ const CourseDetail = () => {
                         <div className="flex items-center gap-3">
                           <RiArrowDownSLine
                             size={18}
-                            className={`text-gray-400 transition-transform duration-200 ${openSections[section.id] ? "rotate-0" : "-rotate-90"}`}
+                            className={`text-gray-400 transition-transform duration-200 ${isSectionOpen ? "rotate-0" : "-rotate-90"}`}
                           />
                           <span className="text-sm font-bold text-gray-900">{section.section}</span>
                         </div>
                         <span className="text-xs text-gray-400 shrink-0">
-                          {section.lectures} lectures · {section.duration}
+                          {section.lectures} lectures
                         </span>
                       </button>
 
-                      {/* Lessons */}
-                      {openSections[section.id] && (
+                      {isSectionOpen && (
                         <div className="divide-y divide-gray-50">
-                          {section.lessons.map(lesson => (
+                          {section.lessons.map((lesson) => (
                             <div
                               key={lesson.id}
-                              onClick={() => lesson.free && goToLesson()}
-                              className={`flex items-center gap-3 px-5 py-3.5 transition
-                                ${lesson.free ? "cursor-pointer hover:bg-indigo-50" : "cursor-default"}`}
+                              onClick={() => lesson.free && goToLesson(lesson.lessonId || lesson.id)}
+                              className={`flex items-center gap-3 px-5 py-3.5 transition ${lesson.free ? "cursor-pointer hover:bg-indigo-50" : "cursor-default"}`}
                             >
-                              {lesson.type === "quiz"
+                              {lesson.type === "lesson"
                                 ? <RiFileListLine size={15} className="text-yellow-500 shrink-0" />
                                 : lesson.free
                                   ? <RiPlayCircleLine size={15} className="text-[#3525d7] shrink-0" />
@@ -260,77 +390,62 @@ const CourseDetail = () => {
                         </div>
                       )}
                     </div>
-                  ))}
-
-                  {/* Show more */}
-                  <button className="cursor-pointer w-full py-4 text-sm font-semibold text-[#3525d7] hover:bg-indigo-50 transition border-t border-gray-100">
-                    Show 9 more sections
-                  </button>
+                    )
+                  })}
                 </div>
               </div>
             )}
 
-            {/* ── Instructor tab ── */}
             {activeTab === "Instructor" && (
               <div className="flex flex-col gap-4">
                 <div className="flex items-center gap-4">
-                  <img src={courseData.instructorAvatar} alt={courseData.instructor}
+                  <img src={instructor.avatar} alt={instructor.name}
                     className="w-16 h-16 rounded-full object-cover border-2 border-indigo-100" />
                   <div>
-                    <h3 className="text-base font-bold text-gray-900">{courseData.instructor}</h3>
-                    <p className="text-sm text-gray-400">Senior UX Designer & Web Performance Expert</p>
+                    <h3 className="text-base font-bold text-gray-900">{instructor.name}</h3>
+                    <p className="text-sm text-gray-400">{instructor.bio}</p>
                     <div className="flex items-center gap-1 mt-1">
                       <RiStarFill size={13} className="text-yellow-400" />
-                      <span className="text-xs font-bold text-gray-700">{courseData.rating} Instructor Rating</span>
+                      <span className="text-xs font-bold text-gray-700">{rating || "0.0"} Instructor Rating</span>
                     </div>
                   </div>
                 </div>
                 <p className="text-sm text-gray-500 leading-relaxed">
-                  Sarah Chen is a performance engineer with 10+ years of experience building fast, scalable web applications for Fortune 500 companies. She has spoken at Google I/O, JSConf, and CSSconf. Her courses have helped over 80,000 developers worldwide build faster, more user-friendly applications.
+                  {activeCourse.description || description}
                 </p>
               </div>
             )}
 
-            {/* ── Reviews tab ── */}
             {activeTab === "Reviews" && (
               <div className="flex flex-col gap-6">
                 <h2 className="text-lg font-bold text-gray-900">Student Feedback</h2>
 
-                {/* Rating summary */}
                 <div className="flex items-center gap-8 p-6 bg-gray-50 rounded-2xl">
                   <div className="flex flex-col items-center gap-1">
-                    <span className="text-5xl font-extrabold text-gray-900">{courseData.rating}</span>
+                    <span className="text-5xl font-extrabold text-gray-900">{rating || "0.0"}</span>
                     <div className="flex items-center gap-0.5">
-                      {[1,2,3,4,5].map(i => <RiStarFill key={i} size={16} className="text-yellow-400" />)}
+                      {[1,2,3,4,5].map((i) => <RiStarFill key={i} size={16} className="text-yellow-400" />)}
                     </div>
                     <span className="text-xs text-gray-400 font-semibold">Course Rating</span>
                   </div>
+
                   <div className="flex-1 flex flex-col gap-2">
-                    {courseData.ratingBreakdown.map((r, i) => (
-                      <div key={i} className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div className="h-full bg-yellow-400 rounded-full" style={{ width: `${r.pct}%` }} />
-                        </div>
-                        <div className="flex items-center gap-0.5 shrink-0">
-                          {[1,2,3,4,5].slice(0, r.stars).map(s => <RiStarFill key={s} size={11} className="text-yellow-400" />)}
-                        </div>
-                        <span className="text-xs text-gray-400 w-8 text-right">{r.pct}%</span>
-                      </div>
-                    ))}
+                    <p className="text-sm text-gray-500">{formatCount(reviewsCount)} ratings from learners.</p>
+                    <p className="text-sm text-gray-500">{formatCount(studentsCount)} students enrolled.</p>
+                    <p className="text-sm text-gray-500">{resourceCount} resource{resourceCount === 1 ? "" : "s"} attached to published lessons.</p>
                   </div>
                 </div>
 
-                {/* Review cards */}
                 <div className="flex flex-col gap-5">
-                  {courseData.reviews.map((review, i) => (
-                    <div key={i} className="flex gap-4 pb-5 border-b border-gray-100 last:border-0">
+                  {reviews.length > 0 ? reviews.map((review, index) => (
+                    <div key={index} className="flex gap-4 pb-5 border-b border-gray-100 last:border-0">
                       <img src={review.avatar} alt={review.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
                       <div className="flex flex-col gap-2 flex-1">
                         <div className="flex items-center justify-between">
                           <div>
                             <p className="text-sm font-bold text-gray-900">{review.name}</p>
                             <div className="flex items-center gap-1 mt-0.5">
-                              {[...Array(review.rating)].map((_, s) => <RiStarFill key={s} size={11} className="text-yellow-400" />)}
+                              {[...Array(review.rating)].map((_, star) => <RiStarFill key={star} size={11} className="text-yellow-400" />)}
                             </div>
                           </div>
                           <span className="text-xs text-gray-400">{review.date}</span>
@@ -347,23 +462,21 @@ const CourseDetail = () => {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <p className="text-sm text-gray-400">No reviews available yet for this course.</p>
+                  )}
                 </div>
               </div>
             )}
-
           </div>
 
-          {/* ── RIGHT column: Sticky purchase card ── */}
           <div className="w-full lg:w-80 shrink-0">
             <div className="sticky top-6 border border-gray-100 rounded-2xl shadow-lg overflow-hidden">
-
-              {/* Video preview */}
               <div
                 className="relative h-44 bg-gray-900 cursor-pointer group"
-                onClick={goToLesson}
+                onClick={() => goToLesson(previewLesson?._id)}
               >
-                <img src={courseData.image} alt={courseData.title}
+                <img src={courseImage} alt={activeCourse?.title || "Course preview"}
                   className="w-full h-full object-cover opacity-70 group-hover:opacity-60 transition" />
                 <div className="absolute inset-0 flex items-center justify-center">
                   <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-xl group-hover:scale-110 transition-transform duration-200">
@@ -377,34 +490,34 @@ const CourseDetail = () => {
                 </div>
               </div>
 
-              {/* Price + actions */}
               <div className="p-5 flex flex-col gap-4">
                 <div className="flex items-center gap-3">
-                  <span className="text-3xl font-extrabold text-gray-900">${courseData.price}</span>
-                  <span className="text-base text-gray-400 line-through">${courseData.originalPrice}</span>
+                  <span className="text-3xl font-extrabold text-gray-900">${Number(activeCourse?.price ?? 0)}</span>
+                  <span className="text-base text-gray-400 line-through">
+                    ${Math.round((activeCourse?.originalPrice ?? activeCourse?.price ?? 0) || 0)}
+                  </span>
                   <span className="text-xs font-extrabold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
-                    {courseData.discount}
+                    {activeCourse?.discount || "Best value"}
                   </span>
                 </div>
 
                 <button
-                  onClick={goToLesson}
+                  onClick={() => goToLesson(previewLesson?._id)}
                   className="cursor-pointer w-full bg-[#3525d7] hover:bg-[#2a1fb0] transition text-white font-bold py-3.5 rounded-xl shadow-md shadow-indigo-200 text-sm"
                 >
-                  Enroll Now
+                  Start Learning
                 </button>
 
                 <button className="cursor-pointer w-full border border-gray-200 hover:border-[#3525d7] hover:text-[#3525d7] text-gray-700 font-semibold py-3.5 rounded-xl transition text-sm">
                   Add to Cart
                 </button>
 
-                {/* Includes */}
                 <div className="flex flex-col gap-2 pt-2 border-t border-gray-100">
                   <p className="text-xs font-extrabold text-gray-900 uppercase tracking-wide">This course includes:</p>
-                  {courseData.includes.map((item, i) => {
+                  {includes.map((item) => {
                     const Icon = item.icon
                     return (
-                      <div key={i} className="flex items-center gap-2.5 text-xs text-gray-500">
+                      <div key={item.label} className="flex items-center gap-2.5 text-xs text-gray-500">
                         <Icon size={14} className="text-[#3525d7] shrink-0" />
                         {item.label}
                       </div>
@@ -412,7 +525,6 @@ const CourseDetail = () => {
                   })}
                 </div>
 
-                {/* Share / Gift */}
                 <div className="flex items-center gap-4 pt-2 border-t border-gray-100">
                   <button className="cursor-pointer flex items-center gap-1.5 text-xs font-semibold text-gray-500 hover:text-[#3525d7] transition">
                     <RiShareLine size={14} /> Share
@@ -424,7 +536,6 @@ const CourseDetail = () => {
               </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

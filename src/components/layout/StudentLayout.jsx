@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { Outlet, useNavigate } from 'react-router-dom'
-import { FiBell, FiSearch, FiSettings, FiGrid, FiLogOut } from 'react-icons/fi'
+import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { FiBell, FiSearch, FiSettings, FiGrid, FiLogOut, FiBriefcase } from 'react-icons/fi'
 import Sidebar from '../studentDashboardComponents/Sidebar'
-
 import DashboardFooter from './DashboardFooter'
+import { useAuth } from '../../context/AuthContext'
 
 const StudentLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -21,6 +21,20 @@ const StudentLayout = () => {
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
+
+  const { user } = useAuth()
+  const firstName = user?.name?.split(" ")[0] || "Student"
+
+
+  const getInitials = (name) => {
+    if (!name) return "U"
+    const parts = name.trim().split(" ")
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+
+  const initials = getInitials(user?.name)
+  const displayName = user?.name || "Guest"
 
   return (
     <div className='flex h-screen bg-[#f7f8fc]'>
@@ -94,10 +108,12 @@ const StudentLayout = () => {
                   ${profileOpen ? 'bg-indigo-50' : 'hover:bg-gray-100'}`}
               >
                 <div className='w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0'>
-                  <span className='text-sm font-bold text-[#3525d7]'>FP</span>
+                  <span className='text-sm font-bold text-[#3525d7]'> {initials} </span>
                 </div>
                 <div className='hidden md:block text-left leading-tight'>
-                  <p className='text-sm font-bold text-gray-900'>Faizan Pervez</p>
+                  <p className='text-sm font-bold text-gray-900'>
+                    {firstName}
+                  </p>
                   <p className='text-xs text-gray-400'>Student</p>
                 </div>
               </button>
@@ -110,10 +126,12 @@ const StudentLayout = () => {
                   <div className='px-4 py-3 border-b border-gray-100'>
                     <div className='flex items-center gap-3'>
                       <div className='w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0'>
-                        <span className='text-sm font-bold text-[#3525d7]'>FP</span>
+                        <span className='text-sm font-bold text-[#3525d7]'>{initials}</span>
                       </div>
                       <div>
-                        <p className='text-sm font-bold text-gray-900'>Faizan Pervez</p>
+                        <p className='text-sm font-bold text-gray-900'>
+                          {firstName}
+                        </p>
                         <p className='text-xs text-gray-400'>Student Account</p>
                       </div>
                     </div>
@@ -134,6 +152,15 @@ const StudentLayout = () => {
                       <FiSettings size={15} /> Settings
                     </button>
                   </div>
+
+                  <Link
+                    to="/become-instructor"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-sm text-gray-700 hover:bg-indigo-50 hover:text-[#3525d7] transition"
+                  >
+                    <FiBriefcase className="text-base" />
+                    Become an Instructor
+                  </Link>
 
                   {/* Logout */}
                   <div className='border-t border-gray-100 pt-1'>

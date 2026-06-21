@@ -1,8 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react"
 import { FiSearch, FiStar, FiUser } from "react-icons/fi"
 import { useNavigate } from "react-router-dom"
-import { fallbackCourses } from "../../data/courseFallback"
-import { getCourses } from "../../services/courseService"
+import { getCourses } from "../../services/course.service"
 
 const categories = ["All Categories", "Design", "Development", "Business", "Marketing", "Photography", "Music", "Data Science"]
 const sortOptions = ["Newest", "Most Popular", "Highest Rated", "Price: Low to High", "Price: High to Low"]
@@ -47,17 +46,12 @@ const StudentCatalog = () => {
         })
 
         if (!ignore) {
-          if (response.meta?.databaseConnected === false) {
-            setError("Backend is running, but MongoDB is not connected yet. Showing demo courses.")
-            setCourses(fallbackCourses)
-          } else {
-            setCourses(response.data || [])
-          }
+            setCourses(Array.isArray(response.data) ? response.data : [])
         }
       } catch (err) {
         if (!ignore) {
-          setError("Backend is not connected yet, showing demo courses.")
-          setCourses(fallbackCourses)
+          setError("Unable to load courses from the server.")
+          setCourses([])
         }
       } finally {
         if (!ignore) setIsLoading(false)
@@ -162,7 +156,7 @@ const StudentCatalog = () => {
                   alt={course.title}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                 />
-                <div className="absolute inset-0 bg-gradient-to-br from-blue-500 to-indigo-600 opacity-40" />
+                <div className="absolute inset-0 bg-linear-to-br from-blue-500 to-indigo-600 opacity-40" />
               </div>
 
               <div className="p-4 flex flex-col gap-2">

@@ -75,7 +75,7 @@ const StudentVideoLesson = () => {
             LearnFlow
           </span>
           <span className="text-gray-300 hidden sm:block">/</span>
-          <span className="text-gray-500 text-sm hidden sm:block truncate max-w-[220px]">
+          <span className="text-gray-500 text-sm hidden sm:block truncate max-w-55">
             {currentLesson.title}
           </span>
         </div>
@@ -251,7 +251,7 @@ const StudentVideoLesson = () => {
             {/* Header */}
             <div className="px-5 py-4 border-b border-gray-100 bg-gray-50">
               <p className="text-[10px] font-extrabold text-gray-400 uppercase tracking-widest">Course Curriculum</p>
-              <p className="text-sm font-bold text-gray-900 mt-1">Mastering Web Performance</p>
+              <p className="text-sm font-bold text-gray-900 mt-1">{currentLesson.title}</p>
             </div>
 
             {/* Sections */}

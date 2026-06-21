@@ -12,6 +12,7 @@ import {
   RiMenuFoldLine,
   RiMenuUnfoldLine,
 } from "react-icons/ri"
+import { useAuth } from "../../context/AuthContext"
 
 const navItems = [
   { label: "Dashboard", icon: RiDashboardLine, to: "/studentdashboard", end: true },
@@ -34,6 +35,22 @@ const Sidebar = () => {
       ? "bg-[#3525d7] text-white shadow-md shadow-indigo-200"
       : "text-gray-500 hover:bg-indigo-50 hover:text-[#3525d7]"
     }`
+
+
+  const { user } = useAuth()
+  const firstName = user?.name?.split(" ")[0] || "Student"
+
+  const getInitials = (name) => {
+    if (!name) return "U"
+    const parts = name.trim().split(" ")
+    if (parts.length === 1) return parts[0][0].toUpperCase()
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  }
+
+  const initials = getInitials(user?.name)
+  const displayName = user?.name || "Guest"
+
+
 
   return (
     <aside className={`h-screen sticky top-0 flex flex-col bg-white border-r border-gray-100 transition-all duration-300
@@ -58,10 +75,12 @@ const Sidebar = () => {
       {!collapsed ? (
         <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
           <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-            <span className="text-sm font-bold text-[#3525d7]">FP</span>
+            <span className="text-sm font-bold text-[#3525d7]">{initials}</span>
           </div>
           <div className="overflow-hidden">
-            <p className="text-sm font-bold text-gray-900 truncate">Faizan Pervez</p>
+            <p className="text-sm font-bold text-gray-900 truncate">
+              {firstName}
+            </p>
             <p className="text-xs text-gray-400 truncate">Student Account</p>
           </div>
         </div>
