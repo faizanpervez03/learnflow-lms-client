@@ -12,7 +12,6 @@ const apiClient = axios.create({
   },
 })
 
-
 apiClient.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken")
   if (token) {
@@ -21,7 +20,68 @@ apiClient.interceptors.request.use((config) => {
   return config
 })
 
+// --- Auto-refresh on token expiry ---
+let isRefreshing = false
+let refreshSubscribers = []
 
+const onRefreshed = (newAccessToken) => {
+  refreshSubscribers.forEach((callback) => callback(newAccessToken))
+  refreshSubscribers = []
+}
+
+const forceLogout = () => {
+  localStorage.removeItem("accessToken")
+  localStorage.removeItem("refreshToken")
+  localStorage.removeItem("user")
+  window.location.href = "/login"
+}
+
+apiClient.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config
+    const status = error.response?.status
+
+    if (!status || status !== 401 || originalRequest._retry || originalRequest.url?.includes("/auth/refresh-token")) {
+      return Promise.reject(error)
+    }
+
+    const refreshToken = localStorage.getItem("refreshToken")
+    if (!refreshToken) {
+      forceLogout()
+      return Promise.reject(error)
+    }
+
+    originalRequest._retry = true
+
+    if (isRefreshing) {
+      return new Promise((resolve) => {
+        refreshSubscribers.push((newAccessToken) => {
+          originalRequest.headers.Authorization = `Bearer ${newAccessToken}`
+          resolve(apiClient(originalRequest))
+        })
+      })
+    }
+
+    isRefreshing = true
+    try {
+      const { data } = await axios.post(`${API_URL}/auth/refresh-token`, { refreshToken })
+      const { accessToken, refreshToken: newRefreshToken } = data.data
+
+      localStorage.setItem("accessToken", accessToken)
+      localStorage.setItem("refreshToken", newRefreshToken)
+
+      onRefreshed(accessToken)
+      originalRequest.headers.Authorization = `Bearer ${accessToken}`
+      return apiClient(originalRequest)
+    } catch (refreshError) {
+      forceLogout()
+      return Promise.reject(refreshError)
+    } finally {
+      isRefreshing = false
+    }
+  },
+)
 
 const normalizeErrors = (errors) => {
   if (Array.isArray(errors)) return errors
@@ -69,11 +129,8 @@ export const apiRequest = async (path, options = {}) => {
       )
     }
 
-    throw new ApiClientError(
-      error?.message || "Request failed",
-      0,
-      [],
-      error,
-    )
+    throw new ApiClientError(error?.message || "Request failed", 0, [], error)
   }
 }
+
+export { API_URL }

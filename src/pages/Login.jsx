@@ -65,7 +65,7 @@ function Login() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="alex@example.com"
+                placeholder="user@gmail.com"
                 className="w-full pl-9 rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 required
               />

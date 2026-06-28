@@ -32,6 +32,8 @@ import InstructorDashboard from './pages/instructuor/InstructorDashboard'
 
 // Routing
 import ProtectedRoute from './routes/ProtectedRoute'
+import InstructorCourses from './pages/instructuor/InstructorCourses'
+import CreateCourse from './pages/instructuor/CreateCourse'
 
 const App = () => {
   return (
@@ -75,6 +77,8 @@ const App = () => {
       }>
         <Route index element={<InstructorDashboard />} />
         <Route path='dashboard' element={<InstructorDashboard />} />
+        <Route path='courses' element={<InstructorCourses />} />
+        <Route path='create-course' element={<CreateCourse />} />
       </Route>
 
       {/* Become Instructor — any logged-in student can apply */}

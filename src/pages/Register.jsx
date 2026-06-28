@@ -75,7 +75,7 @@ function Register() {
               name="fullName"
               value={form.fullName}
               onChange={handleChange}
-              placeholder="Alex Rivers"
+              placeholder="Full Name"
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
@@ -88,7 +88,7 @@ function Register() {
               name="email"
               value={form.email}
               onChange={handleChange}
-              placeholder="alex@example.com"
+              placeholder="user@gmail.com"
               className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             />
